@@ -169,3 +169,7 @@ function friendlyError(e) {
 document.getElementById('passInp').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') window.submitAuth();
 });
+// At the bottom of auth.js, after defining your functions:
+window.submitAuth = submitAuth;
+window.signInGoogle = signInGoogle;
+window.switchAuthTab = switchAuthTab;
