@@ -348,12 +348,12 @@ html, body {
   font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
   text-transform: uppercase; color: var(--ink3); margin-bottom: 13px;
 }
-.time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 11px; }
+.time-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin-bottom: 11px; }
 .tf { display: flex; flex-direction: column; gap: 5px; }
 .tf-lbl { font-size: 10px; font-weight: 700; color: var(--ink3); text-transform: uppercase; letter-spacing: .6px; }
 .tf-row { display: flex; gap: 5px; align-items: center; }
 .tf-inp {
-  flex: 1; padding: 10px 8px; text-align: center;
+  flex: 1; min-width: 0; padding: 10px 8px; text-align: center;
   font-family: 'Courier Prime', monospace; font-size: 20px; font-weight: 700;
   background: #fff; border: 1.5px solid var(--card-border);
   border-radius: var(--r3); color: var(--ink); outline: none;
