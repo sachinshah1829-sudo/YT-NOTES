@@ -1,4 +1,4 @@
-// js/auth.js — Authentication
+// js/auth.js — Authentication (no inline onclick needed)
 import { auth } from './firebase.js';
 import {
   signInWithEmailAndPassword,
@@ -13,40 +13,152 @@ import {
 const provider = new GoogleAuthProvider();
 let currentMode = 'login'; // 'login' | 'signup'
 
-// ── Exposed globals ──────────────────────────────────
+// ── Wire up all buttons once DOM is ready ────────────
+document.addEventListener('DOMContentLoaded', () => {
 
-window.switchAuthTab = function(mode) {
+  // Auth tab buttons
+  document.getElementById('tabLogin').addEventListener('click', () => switchAuthTab('login'));
+  document.getElementById('tabSignup').addEventListener('click', () => switchAuthTab('signup'));
+
+  // Google sign-in
+  document.getElementById('googleBtn').addEventListener('click', signInGoogle);
+
+  // Email/password submit
+  document.getElementById('authSubmitBtn').addEventListener('click', submitAuth);
+
+  // Footer link (Sign Up / Sign In toggle)
+  document.getElementById('authFootLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    switchAuthTab(currentMode === 'login' ? 'signup' : 'login');
+  });
+
+  // Enter key on password field
+  document.getElementById('passInp').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitAuth();
+  });
+
+  // App: sign out
+  document.getElementById('signOutBtn').addEventListener('click', async () => {
+    closeUserMenu();
+    await fbSignOut(auth);
+  });
+
+  // App: user menu toggle
+  document.getElementById('userBtn').addEventListener('click', () => {
+    document.getElementById('userMenu').classList.toggle('hidden');
+  });
+
+  // App: close user menu on outside click
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('userMenu');
+    const btn  = document.getElementById('userBtn');
+    if (!menu.classList.contains('hidden') && !menu.contains(e.target) && !btn.contains(e.target)) {
+      menu.classList.add('hidden');
+    }
+  });
+
+  // App: category sheet open
+  document.getElementById('openCatSheetBtn').addEventListener('click', () => {
+    window.openCatSheet && window.openCatSheet();
+  });
+
+  // App: category sheet overlay close
+  document.getElementById('catOverlay').addEventListener('click', (e) => {
+    window.closeCatSheet && window.closeCatSheet(e);
+  });
+
+  // App: add category
+  document.getElementById('addCatBtn').addEventListener('click', () => {
+    window.addCat && window.addCat();
+  });
+
+  // App: cat filter change
+  document.getElementById('catFilter').addEventListener('change', () => {
+    window.renderLib && window.renderLib();
+  });
+
+  // App: load video
+  document.getElementById('loadBtn').addEventListener('click', () => {
+    window.loadVideo && window.loadVideo();
+  });
+
+  // App: video category change
+  document.getElementById('vidCatSel').addEventListener('change', () => {
+    window.changeVideoCat && window.changeVideoCat();
+  });
+
+  // App: save video
+  document.getElementById('saveVidBtn').addEventListener('click', () => {
+    window.saveCurrentVideo && window.saveCurrentVideo();
+  });
+
+  // App: time inputs
+  document.getElementById('startInp').addEventListener('input', () => {
+    window.onTimeInput && window.onTimeInput();
+  });
+  document.getElementById('endInp').addEventListener('input', () => {
+    window.onTimeInput && window.onTimeInput();
+  });
+
+  // App: stamp buttons
+  document.getElementById('btnS').addEventListener('click', () => {
+    window.stampNow && window.stampNow('start');
+  });
+  document.getElementById('btnE').addEventListener('click', () => {
+    window.stampNow && window.stampNow('end');
+  });
+
+  // App: preview section
+  document.getElementById('previewSecBtn').addEventListener('click', () => {
+    window.previewSec && window.previewSec();
+  });
+
+  // App: add section
+  document.getElementById('addBtn').addEventListener('click', () => {
+    window.addSection && window.addSection();
+  });
+
+  // App: tab bar
+  document.getElementById('tab0').addEventListener('click', () => window.goTab && window.goTab(0));
+  document.getElementById('tab1').addEventListener('click', () => window.goTab && window.goTab(1));
+  document.getElementById('tab2').addEventListener('click', () => window.goTab && window.goTab(2));
+});
+
+// ── Auth functions ───────────────────────────────────
+
+function switchAuthTab(mode) {
   currentMode = mode;
   document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
   document.getElementById('tabSignup').classList.toggle('active', mode === 'signup');
   document.getElementById('nameGroup').style.display = mode === 'signup' ? 'block' : 'none';
   document.getElementById('authSubmitTxt').textContent = mode === 'login' ? 'Sign In' : 'Create Account';
-  document.getElementById('authFoot').innerHTML = mode === 'login'
-    ? 'Don\'t have an account? <a href="#" onclick="switchAuthTab(\'signup\')">Sign Up</a>'
-    : 'Already have an account? <a href="#" onclick="switchAuthTab(\'login\')">Sign In</a>';
+  document.getElementById('authFootLink').textContent = mode === 'login' ? 'Sign Up' : 'Sign In';
+  document.getElementById('authFoot').firstChild.textContent = mode === 'login'
+    ? "Don't have an account? "
+    : "Already have an account? ";
+  document.getElementById('passInp').autocomplete = mode === 'signup' ? 'new-password' : 'current-password';
   clearAuthError();
-  if (mode === 'signup') document.getElementById('passInp').autocomplete = 'new-password';
-  else                   document.getElementById('passInp').autocomplete = 'current-password';
-};
+}
 
-window.signInGoogle = async function() {
+async function signInGoogle() {
   clearAuthError();
   try {
     await signInWithPopup(auth, provider);
-    // onAuthStateChanged will handle the rest
   } catch (e) {
     showAuthError(friendlyError(e));
   }
-};
+}
 
-window.submitAuth = async function() {
+async function submitAuth() {
   const email = document.getElementById('emailInp').value.trim();
   const pass  = document.getElementById('passInp').value;
   const name  = document.getElementById('nameInp').value.trim();
 
   if (!email) { showAuthError('Please enter your email.'); return; }
   if (!pass)  { showAuthError('Please enter your password.'); return; }
-  if (currentMode === 'signup' && pass.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+  if (currentMode === 'signup' && pass.length < 6) {
+    showAuthError('Password must be at least 6 characters.'); return;
+  }
 
   setAuthLoading(true);
   clearAuthError();
@@ -61,39 +173,14 @@ window.submitAuth = async function() {
     showAuthError(friendlyError(e));
     setAuthLoading(false);
   }
-};
-
-window.signOut = async function() {
-  closeUserMenu();
-  await fbSignOut(auth);
-};
-
-window.toggleUserMenu = function() {
-  document.getElementById('userMenu').classList.toggle('hidden');
-};
-
-window.closeUserMenu = function() {
-  document.getElementById('userMenu').classList.add('hidden');
-};
-
-// Close user menu on outside click
-document.addEventListener('click', function(e) {
-  const menu = document.getElementById('userMenu');
-  const btn  = document.getElementById('userBtn');
-  if (!menu.classList.contains('hidden') && !menu.contains(e.target) && !btn.contains(e.target)) {
-    menu.classList.add('hidden');
-  }
-});
+}
 
 // ── Auth state observer ──────────────────────────────
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    // Signed in → show app
     showApp(user);
-    // Dispatch custom event so db.js / app.js can load data
     window.dispatchEvent(new CustomEvent('userSignedIn', { detail: user }));
   } else {
-    // Signed out → show auth screen
     showAuth();
     window.dispatchEvent(new CustomEvent('userSignedOut'));
   }
@@ -104,26 +191,20 @@ function showApp(user) {
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('appScreen').classList.remove('hidden');
 
-  // Fill user info in nav
   const initEl   = document.getElementById('userInitial');
   const avatarEl = document.getElementById('userAvatar');
-  const nameEl   = document.getElementById('umName');
-  const emailEl  = document.getElementById('umEmail');
-
-  nameEl.textContent  = user.displayName || 'User';
-  emailEl.textContent = user.email || '';
+  document.getElementById('umName').textContent  = user.displayName || 'User';
+  document.getElementById('umEmail').textContent = user.email || '';
 
   if (user.photoURL) {
     avatarEl.src = user.photoURL;
     avatarEl.classList.remove('hidden');
     initEl.classList.add('hidden');
   } else {
-    const initial = (user.displayName || user.email || '?')[0].toUpperCase();
-    initEl.textContent = initial;
+    initEl.textContent = (user.displayName || user.email || '?')[0].toUpperCase();
     initEl.classList.remove('hidden');
     avatarEl.classList.add('hidden');
   }
-
   setAuthLoading(false);
 }
 
@@ -165,11 +246,6 @@ function friendlyError(e) {
   return e.message || 'Something went wrong. Please try again.';
 }
 
-// Enter key on password field
-document.getElementById('passInp').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') window.submitAuth();
-});
-// At the bottom of auth.js, after defining your functions:
-window.submitAuth = submitAuth;
-window.signInGoogle = signInGoogle;
-window.switchAuthTab = switchAuthTab;
+function closeUserMenu() {
+  document.getElementById('userMenu').classList.add('hidden');
+}
